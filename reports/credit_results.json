@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-10-08T09:48:56.020129+00:00",
+  "project": "credit-risk-modeling",
+  "description": "Credit default probability modeling on the UCI Taiwan credit dataset with calibration, asymmetric-cost threshold selection and fairness diagnostics (educational research project; not a production credit system).",
+  "config": {
+    "test_size": 0.25,
+    "calibration_size": 0.25,
+    "random_state": 42,
+    "fn_cost": 5.0,
+    "fp_cost": 1.0,
+    "threshold_grid": 81,
+    "include_sex_feature": false,
+    "raw_dir": "data/raw",
+    "processed_dir": "data/processed",
+    "figures_dir": "figures",
+    "reports_dir": "reports"
+  },
+  "metrics": [
+    {
+      "model": "logistic_regression",
+      "roc_auc": 0.746311,
+      "pr_auc": 0.512614,
+      "brier": 0.141699,
+      "ks": 0.399045,
+      "cal_roc_auc": 0.746311,
+      "cal_pr_auc": 0.512614,
+      "cal_brier": 0.1417,
+      "cal_ks": 0.399045,
+      "threshold_from_cal": 0.16
+    },
+    {
+      "model": "random_forest",
+      "roc_auc": 0.774686,
+      "pr_auc": 0.553581,
+      "brier": 0.135733,
+      "ks": 0.421318,
+      "cal_roc_auc": 0.773233,
+      "cal_pr_auc": 0.535161,
+      "cal_brier": 0.136166,
+      "cal_ks": 0.418847,
+      "threshold_from_cal": 0.2
+    },
+    {
+      "model": "gradient_boosting",
+      "roc_auc": 0.778247,
+      "pr_auc": 0.557849,
+      "brier": 0.135053,
+      "ks": 0.419442,
+      "cal_roc_auc": 0.776417,
+      "cal_pr_auc": 0.537745,
+      "cal_brier": 0.13568,
+      "cal_ks": 0.416072,
+      "threshold_from_cal": 0.19
+    }
+  ],
+  "threshold_analysis": [
+    {
+      "model": "logistic_regression",
+      "threshold": 0.16,
+      "tn": 3706,
+      "fp": 2135,
+      "fn": 486,
+      "tp": 1173,
+      "accuracy": 0.650533,
+      "expected_cost": 4565.0
+    },
+    {
+      "model": "random_forest",
+      "threshold": 0.2,
+      "tn": 4715,
+      "fp": 1126,
+      "fn": 645,
+      "tp": 1014,
+      "accuracy": 0.763867,
+      "expected_cost": 4351.0
+    },
+    {
+      "model": "gradient_boosting",
+      "threshold": 0.19,
+      "tn": 4321,
+      "fp": 1520,
+      "fn": 557,
+      "tp": 1102,
+      "accuracy": 0.723067,
+      "expected_cost": 4305.0
+    }
+  ],
+  "fairness": {
+    "male": {
+      "share": 0.3977333333333333,
+      "selection_rate": 0.4686557157224271,
+      "default_rate": 0.23533355682199128,
+      "tpr": 0.7122507122507122
+    },
+    "female": {
+      "share": 0.6022666666666666,
+      "selection_rate": 0.42284702235997346,
+      "default_rate": 0.21186628293114898,
+      "tpr": 0.703239289446186
+    },
+    "equal_opportunity_diff": 0.00901142280452627,
+    "selection_rate_diff": 0.045808693362453634
+  },
+  "selected_thresholds": {
+    "logistic_regression": 0.15999999999999998,
+    "random_forest": 0.19999999999999996,
+    "gradient_boosting": 0.19
+  }
+}

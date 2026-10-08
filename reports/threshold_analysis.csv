@@ -1,0 +1,4 @@
+model,threshold,tn,fp,fn,tp,accuracy,expected_cost
+logistic_regression,0.16,3706,2135,486,1173,0.650533,4565.0
+random_forest,0.2,4715,1126,645,1014,0.763867,4351.0
+gradient_boosting,0.19,4321,1520,557,1102,0.723067,4305.0
