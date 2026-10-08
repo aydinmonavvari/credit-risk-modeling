@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "credit-risk-modeling: default probability modeling with calibration, cost-based thresholds and fairness diagnostics"
+authors:
+  - family-names: Monavvari
+    given-names: Aydin
+    email: 245710241+aydinmonavvari@users.noreply.github.com
+version: 1.0.0
+date-released: "2026-10-08"
+license: MIT
+repository-code: "https://github.com/aydinmonavvari/credit-risk-modeling"
+keywords:
+  - credit-risk
+  - probability-of-default
+  - calibration
+  - machine-learning
+  - interpretability
+abstract: "Educational research project building probability-of-default models on the UCI Default of Credit Card Clients dataset (Yeh & Lien 2009) with probability calibration, asymmetric-cost threshold selection, ROC/PR/KS evaluation and fairness diagnostics."
