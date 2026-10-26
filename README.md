@@ -136,6 +136,12 @@ All `random_state = 42`.
 
 ## 12 · Results
 
+> **Regeneration note (post-audit fix):** the pipeline now selects the decision
+> threshold on the *calibrated* calibration-split scores (the committed run swept the
+> threshold on raw probabilities and applied it to calibrated scores). All metrics,
+> thresholds and figures below are outputs of the pre-fix run on the real dataset and
+> will be regenerated; they are retained unchanged in the meantime.
+
 Actual outputs of the committed run (`reports/credit_results.json`).
 
 **Discrimination and calibration (test set, n = 7,500):**

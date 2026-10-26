@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.model_selection import train_test_split
 
+from credit_risk_modeling.config import CreditConfig
 from credit_risk_modeling.data import prepare
 from credit_risk_modeling.evaluation import (
     confusion_at_threshold,
@@ -14,7 +18,9 @@ from credit_risk_modeling.evaluation import (
     optimal_threshold,
     threshold_sweep,
 )
-from credit_risk_modeling.features import FEATURE_COLUMNS, build_features
+from credit_risk_modeling.features import FEATURE_COLUMNS, TARGET, build_features
+from credit_risk_modeling.models import calibrate, make_estimators
+from credit_risk_modeling.pipeline import run_pipeline
 
 
 def _synthetic_frame(n=2000, seed=3) -> pd.DataFrame:
@@ -133,3 +139,67 @@ def test_confusion_at_threshold_matches_sklearn_labels():
     assert e == {"tn": 2, "fp": 0, "fn": 0, "tp": 2}
     e_low = confusion_at_threshold(y, score, 0.3)
     assert e_low == {"tn": 1, "fp": 1, "fn": 0, "tp": 2}
+
+
+def test_threshold_selected_on_calibrated_scale(tmp_path):
+    """Regression: the cost sweep must run on the calibrated score scale.
+
+    The pipeline used to sweep the decision threshold on RAW probabilities
+    and then apply the same number to CALIBRATED scores (scale transfer).
+    This test recomputes both scales for the random forest under the
+    pipeline's exact split design (same two-stage stratified split, same
+    seed, same estimator configuration), asserts the two optima genuinely
+    differ on this data, and asserts the pipeline now selects the threshold
+    on the calibrated scale — the scale the threshold is applied on.
+    """
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    _synthetic_frame().to_csv(raw_dir / "uci_credit_default.csv", index=False)
+    config = CreditConfig(
+        raw_dir=raw_dir,
+        processed_dir=tmp_path / "processed",
+        figures_dir=tmp_path / "figures",
+        reports_dir=tmp_path / "reports",
+    )
+    run_pipeline(config, save_outputs=True)
+    payload = json.loads(
+        (config.reports_dir / "credit_results.json").read_text(encoding="utf-8")
+    )
+    selected = payload["selected_thresholds"]["random_forest"]
+
+    frame = prepare(_synthetic_frame())
+    feats = build_features(frame)
+    X = feats[list(FEATURE_COLUMNS)]
+    y = feats[TARGET]
+    X_trainval, _, y_trainval, _, _, _ = train_test_split(
+        X, y, frame["sex_label"], test_size=config.test_size,
+        stratify=y, random_state=config.random_state,
+    )
+    X_train, X_cal, y_train, y_cal = train_test_split(
+        X_trainval, y_trainval, test_size=config.calibration_size,
+        stratify=y_trainval, random_state=config.random_state,
+    )
+    rf = make_estimators(config.random_state)["random_forest"]
+    rf.fit(X_train, y_train)
+    raw_thr = optimal_threshold(
+        threshold_sweep(
+            y_cal, rf.predict_proba(X_cal)[:, 1],
+            config.fn_cost, config.fp_cost, config.threshold_grid,
+        )
+    )
+    cal_scores = calibrate(rf, "isotonic", X_cal, y_cal).predict_proba(X_cal)[:, 1]
+    cal_thr = optimal_threshold(
+        threshold_sweep(
+            y_cal, cal_scores, config.fn_cost, config.fp_cost, config.threshold_grid,
+        )
+    )
+
+    # the regression only bites if the two scales genuinely differ here
+    assert raw_thr != cal_thr, (
+        f"raw-scale optimum {raw_thr} equals calibrated-scale optimum {cal_thr}"
+    )
+    # and the pipeline must have selected on the calibrated scale
+    assert selected == cal_thr, (
+        f"pipeline selected {selected} (raw-scale optimum {raw_thr}, "
+        f"calibrated-scale optimum {cal_thr})"
+    )

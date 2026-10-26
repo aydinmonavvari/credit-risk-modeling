@@ -5,6 +5,12 @@
 *Author: Aydin Monavvari — educational research project (not a production credit system).*
 *Run date: 2026-10-08. All numbers are actual outputs of the committed pipeline.*
 
+> **Regeneration note (post-audit fix):** the pipeline now selects the decision
+> threshold on calibrated calibration-split scores (the committed run swept the
+> threshold on raw probabilities and applied it to calibrated scores). All numbers in
+> this report are outputs of that pre-fix run on the real dataset and will be
+> regenerated; they are retained unchanged until that rerun.
+
 ---
 
 ## Abstract
