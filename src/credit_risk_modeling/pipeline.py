@@ -79,18 +79,20 @@ def run_pipeline(config=None, save_outputs: bool = True) -> dict:
     for name in MODEL_ORDER:
         model = estimators[name]
         model.fit(X_train, y_train)
-        # select threshold + calibration mapping on the CALIBRATION split only
-        raw_cal = model.predict_proba(X_cal)[:, 1]
+        # calibrate FIRST, then sweep the threshold on the CALIBRATED
+        # calibration-split scores so the threshold is selected on the same
+        # scale it is later applied on (calibrated test probabilities)
+        method = "sigmoid" if name == "logistic_regression" else "isotonic"
+        calib = calibrate(model, method, X_cal, y_cal)
+        cal_cal = calib.predict_proba(X_cal)[:, 1]
         raw_test = model.predict_proba(X_test)[:, 1]
         uncalibrated_scores[name] = raw_test
         thr_rows = threshold_sweep(
-            y_cal, raw_cal, config.fn_cost, config.fp_cost, config.threshold_grid
+            y_cal, cal_cal, config.fn_cost, config.fp_cost, config.threshold_grid
         )
         thr = optimal_threshold(thr_rows)
         best_thresholds[name] = thr
 
-        method = "sigmoid" if name == "logistic_regression" else "isotonic"
-        calib = calibrate(model, method, X_cal, y_cal)
         cal_test = calib.predict_proba(X_test)[:, 1]
         calibrated_scores[name] = cal_test
 

@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
+
+try:  # scikit-learn >= 1.6: prefit calibration goes through FrozenEstimator
+    from sklearn.frozen import FrozenEstimator
+except ImportError:  # scikit-learn < 1.6: cv="prefit" is the supported API
+    FrozenEstimator = None  # type: ignore[assignment]
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.inspection import permutation_importance
@@ -81,7 +86,13 @@ def calibrate(model, method: str, X_cal, y_cal):
     Calibration uses a dedicated split that never overlaps the test set, so
     the test set remains a fully untouched estimate of calibrated behavior.
     """
-    calibrated = CalibratedClassifierCV(model, method=method, cv="prefit")
+    if FrozenEstimator is not None:
+        # scikit-learn >= 1.6 removed cv="prefit"; freezing the fitted base
+        # estimator marks it as already trained so only the calibrator is fit
+        # on the dedicated calibration split (identical semantics).
+        calibrated = CalibratedClassifierCV(FrozenEstimator(model), method=method)
+    else:
+        calibrated = CalibratedClassifierCV(model, method=method, cv="prefit")
     calibrated.fit(X_cal, y_cal)
     return calibrated
 
